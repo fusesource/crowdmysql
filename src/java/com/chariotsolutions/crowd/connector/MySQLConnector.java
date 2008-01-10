@@ -1,6 +1,3 @@
-/*
- * Copyright 2007 Combined Conditional Access Development, LLC.
- */
 package com.chariotsolutions.crowd.connector;
 
 import com.atlassian.crowd.integration.SearchContext;
