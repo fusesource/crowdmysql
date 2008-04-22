@@ -80,13 +80,13 @@ public class MySQLConnector implements RemoteDirectory {
         return "IONA Database";
     }
 
-    public Map getAttributes() {
-        return new HashMap();
+    public Map<String, AttributeValues> getAttributes() {
+        return new HashMap<String, AttributeValues>();
     }
 
-    public void setAttributes(Map map) {
+    public void setAttributes(Map<String, AttributeValues> map) {
         if(map.size() > 0) {
-            log.debug("Setting directory attributes to "+map);
+            log.debug("Setting directory attributes to " + map);
         }
     }
 
@@ -106,7 +106,7 @@ public class MySQLConnector implements RemoteDirectory {
 
             String password = null;
             if(principal.getCredentials().size() > 0) {
-                password = ((PasswordCredential) principal.getCredentials().get(0)).getCredential();
+                password = (principal.getCredentials().get(0)).getCredential();
             }
 
             // Handle Attributes
@@ -122,19 +122,19 @@ public class MySQLConnector implements RemoteDirectory {
                 Map.Entry entry = (Map.Entry) o;
                 String key = (String) entry.getKey();
                 if(key.equals(RemotePrincipal.FIRSTNAME)) {
-                    firstName = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    firstName = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(RemotePrincipal.EMAIL)) {
-                    email = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    email = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(RemotePrincipal.LASTNAME)) {
-                    lastName = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    lastName = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(ATTRIBUTE_COUNTRY)) {
-                    country = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    country = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(ATTRIBUTE_TITLE)) {
-                    title = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    title = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(ATTRIBUTE_PHONE)) {
-                    phoneNumber = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    phoneNumber = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(ATTRIBUTE_COMPANY)) {
-                    company = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    company = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else {
                     log.warn("Unrecognized attribute when creating principal: "+key+"="+entry.getValue());
                 }
@@ -494,7 +494,7 @@ public class MySQLConnector implements RemoteDirectory {
         }
     }
 
-    public List findGroupMemberships(String username) throws RemoteException, ObjectNotFoundException {
+    public List<RemoteGroup> findGroupMemberships(String username) throws RemoteException, ObjectNotFoundException {
         Connection con = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -510,13 +510,21 @@ public class MySQLConnector implements RemoteDirectory {
             rs.close(); rs = null;
             ps.close();
 
-            ps = con.prepareStatement("SELECT g.group_name FROM user_groups ug, group_table g " +
-                    "WHERE ug.user_id=? AND g.id = ug.group_id");
+            ps = con.prepareStatement("SELECT g.id, g.group_name, g.created, g.description, g.disabled " +
+                    " FROM user_groups ug, group_table g " +
+                    " WHERE ug.user_id=? AND g.id = ug.group_id");
             ps.setLong(1, userId);
             rs = ps.executeQuery();
-            List<String> list = new ArrayList<String>();
+            List<RemoteGroup> list = new ArrayList<RemoteGroup>();
             while(rs.next()) {
-                list.add(rs.getString(1));
+                RemoteGroup result = new RemoteGroup();
+                result.setID(rs.getLong(1));
+                result.setName(rs.getString(2));
+                result.setConception(rs.getDate(3));
+                result.setDirectoryID(this.id);
+                result.setDescription(rs.getString(4));
+                result.setActive(rs.getInt(5) == 0);
+                list.add(result);
             }
             return list;
         } catch (SQLException e) {
@@ -526,7 +534,7 @@ public class MySQLConnector implements RemoteDirectory {
         }
     }
 
-    public List searchGroups(SearchContext searchContext) throws RemoteException {
+    public List<RemoteGroup> searchGroups(SearchContext searchContext) throws RemoteException {
         log.debug("Group Search "+searchContext);
 
         String sql = "SELECT id, group_name, created, description, disabled FROM group_table";
@@ -545,7 +553,7 @@ public class MySQLConnector implements RemoteDirectory {
             } else if (entry.getKey().equals("group.directory.id")) {
                 long value = (Long) entry.getValue();
                 if (value != this.id) {
-                    return Collections.EMPTY_LIST;
+                    return Collections.emptyList();
                 }
             } else if (entry.getKey().equals("group.name")) {
                 where += "AND group_name=? ";
@@ -615,7 +623,7 @@ public class MySQLConnector implements RemoteDirectory {
         }
     }
 
-    public List searchPrincipals(SearchContext searchContext) throws RemoteException {
+    public List<RemotePrincipal> searchPrincipals(SearchContext searchContext) throws RemoteException {
         log.debug("Principal Search "+searchContext);
         String sql = USER_SELECT;
         String where = "";
@@ -630,7 +638,7 @@ public class MySQLConnector implements RemoteDirectory {
             } else if (entry.getKey().equals("principal.directory.id")) {
                 long value = (Long) entry.getValue();
                 if (value != this.id) {
-                    return Collections.EMPTY_LIST;
+                    return Collections.emptyList();
                 }
             } else if (entry.getKey().equals("principal.name")) {
                 where += "AND user_name=? ";
@@ -705,6 +713,17 @@ public class MySQLConnector implements RemoteDirectory {
         }
     }
 
+    public List<RemotePrincipal> findAllGroupMembers(String groupName) throws RemoteException {
+        // unsupported operation
+        // TODO implement this it will make other code a lot more efficient
+        return Collections.emptyList();
+    }
+
+    public List<RemotePrincipal> findAllRoleMembers(String roleName) throws RemoteException {
+        // unsupported operation
+        return Collections.emptyList();
+    }
+
     public RemotePrincipal updatePrincipal(RemotePrincipal principal) throws RemoteException, ObjectNotFoundException {
         Connection con = null;
         PreparedStatement ps = null;
@@ -715,7 +734,7 @@ public class MySQLConnector implements RemoteDirectory {
 
             String password = null;
             if(principal.getCredentials().size() > 0) {
-                password = ((PasswordCredential) principal.getCredentials().get(0)).getCredential();
+                password = principal.getCredentials().get(0).getCredential();
             }
 
             // Handle Attributes
@@ -731,19 +750,19 @@ public class MySQLConnector implements RemoteDirectory {
                 Map.Entry entry = (Map.Entry) o;
                 String key = (String) entry.getKey();
                 if(key.equals(RemotePrincipal.FIRSTNAME)) {
-                    firstName = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    firstName = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(RemotePrincipal.EMAIL)) {
-                    email = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    email = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(RemotePrincipal.LASTNAME)) {
-                    lastName = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    lastName = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(ATTRIBUTE_COUNTRY)) {
-                    country = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    country = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(ATTRIBUTE_TITLE)) {
-                    title = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    title = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(ATTRIBUTE_PHONE)) {
-                    phoneNumber = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    phoneNumber = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else if(key.equals(ATTRIBUTE_COMPANY)) {
-                    company = (String)((AttributeValues) entry.getValue()).getValues().get(0);
+                    company = ((AttributeValues) entry.getValue()).getValues().get(0);
                 } else {
                     log.warn("Unrecognized attribute when updating principal: "+key+"="+entry.getValue());
                 }
@@ -773,8 +792,8 @@ public class MySQLConnector implements RemoteDirectory {
         }
     }
 
-    public List searchRoles(SearchContext searchContext) throws RemoteException {
-        return Collections.EMPTY_LIST;
+    public List<RemoteRole> searchRoles(SearchContext searchContext) throws RemoteException {
+        return Collections.emptyList();
     }
 
     public RemoteRole findRoleByName(String string) throws RemoteException, ObjectNotFoundException {
@@ -805,11 +824,9 @@ public class MySQLConnector implements RemoteDirectory {
         return false;
     }
 
-    public List findRoleMemberships(String username) throws RemoteException, ObjectNotFoundException {
-        return Collections.EMPTY_LIST;
+    public List<RemoteRole> findRoleMemberships(String username) throws RemoteException, ObjectNotFoundException {
+        return Collections.emptyList();
     }
-
-
 
     private RemotePrincipal readPrincipal(String username, ResultSet rs, PasswordCredential pwd) throws SQLException {
         long id = rs.getLong(USER_ID_FIELD);
