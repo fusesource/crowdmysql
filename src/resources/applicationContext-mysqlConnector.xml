@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+    <!--
+    Adjust the database settings for your installation
+    The data source is autowired into the crowd connector
+    -->
+
+    <bean id="mySqlConnectorDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+      <property name="driverClass" value="com.mysql.jdbc.Driver"/>
+      <property name="jdbcUrl" value="jdbc:mysql://localhost/crowd?autoReconnect=true"/>
+      <property name="user" value="crowd"/>
+      <property name="password" value="secret"/>
+    </bean>
+
+</beans>
