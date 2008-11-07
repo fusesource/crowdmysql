@@ -142,8 +142,8 @@ public class MySQLConnector extends DirectoryEntity implements RemoteDirectory {
 
     public void updatePrincipalCredential(String name, PasswordCredential credentials) throws ObjectNotFoundException, InvalidCredentialException {
         String password = credentials.getCredential(); // password is plaintext here
-        String sql = "UPDATE user SET password = ?";
-        simpleJdbcTemplate.update(sql, password);
+        String sql = "UPDATE user SET password = ? WHERE user_name = ?";
+        simpleJdbcTemplate.update(sql, password, name);
     }
 
     // TODO implement pageing (see old implementation for details)
