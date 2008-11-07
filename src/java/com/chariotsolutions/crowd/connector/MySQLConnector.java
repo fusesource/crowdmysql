@@ -318,7 +318,7 @@ public class MySQLConnector extends DirectoryEntity implements RemoteDirectory {
     }
 
     public void removePrincipalFromGroup(String name, String subscribedGroup) throws ObjectNotFoundException {
-        String sql = "DELETE FROM user_groups " +
+        String sql = "DELETE FROM user_groups ug" +
                 "         USING user_groups ug,  user u, group_table g " +
                 "         WHERE u.id = ug.user_id AND g.id = ug.group_id " +
                 "         AND u.user_name = ?  AND g.group_name = ?";
