@@ -136,7 +136,7 @@ public class MySQLConnector extends DirectoryEntity implements RemoteDirectory {
 
     public void removePrincipal(String name) throws ObjectNotFoundException {
         int user_id = simpleJdbcTemplate.queryForInt("SELECT id FROM user WHERE user_name = ?", name);
-        simpleJdbcTemplate.update("DELETE FROM user_groups WHERE user_id = ?", user_id);
+        simpleJdbcTemplate.update("DELETE FROM user_group WHERE user_id = ?", user_id);
         simpleJdbcTemplate.update("DELETE FROM user WHERE user_name = ?", name);
     }
 
@@ -319,7 +319,9 @@ public class MySQLConnector extends DirectoryEntity implements RemoteDirectory {
 
     public void removePrincipalFromGroup(String name, String subscribedGroup) throws ObjectNotFoundException {
         String sql = "DELETE FROM user_groups " +
-                "USING user u, group_table g WHERE u.id = user_id AND g.id = group_id AND u.user_name = ?  AND g.group_name = ?";
+                "         USING user_groups ug,  user u, group_table g " +
+                "         WHERE u.id = ug.user_id AND g.id = ug.group_id " +
+                "         AND u.user_name = ?  AND g.group_name = ?";
 
         simpleJdbcTemplate.update(sql, name, subscribedGroup);
     }
