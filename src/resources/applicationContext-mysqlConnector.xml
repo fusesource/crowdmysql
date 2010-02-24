@@ -13,7 +13,7 @@
       <property name="driverClass" value="com.mysql.jdbc.Driver"/>
       <property name="jdbcUrl" value="jdbc:mysql://localhost/crowd?autoReconnect=true"/>
       <property name="user" value="crowd"/>
-      <property name="password" value="secret"/>
+      <property name="password" value="password"/>
     </bean>
 
 </beans>
